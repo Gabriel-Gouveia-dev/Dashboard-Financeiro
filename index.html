@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Dashboard Financeiro — controle suas receitas e despesas" />
+    <title>Dashboard Financeiro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../arquivo-css/style.css" />
+
+    <!-- Chart.js via CDN — usado no módulo graficos.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  </head>
+
+  <body>
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-icone">◈</span>
+        <span class="logo-texto">FinDash</span>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Navegação principal">
+        <a href="#resumo"    class="nav-item ativo">
+          <span class="nav-icone">▣</span> Resumo
+        </a>
+        <a href="#graficos"  class="nav-item">
+          <span class="nav-icone">◎</span> Gráficos
+        </a>
+        <a href="#historico" class="nav-item">
+          <span class="nav-icone">≡</span> Histórico
+        </a>
+        <a href="#adicionar" class="nav-item">
+          <span class="nav-icone">＋</span> Adicionar
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <button id="btnTema" class="btn-tema" type="button" aria-label="Alternar tema">
+          <span id="temaIcone">🌙</span>
+          <span id="temaLabel">Tema claro</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ===================== CONTEÚDO PRINCIPAL ===================== -->
+    <div class="main-content">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="topbar-titulo">Dashboard Financeiro</h1>
+          <div class="cotacao-pill">
+            <span class="cotacao-dot"></span>
+            USD/BRL — <span id="cotacaoValor">carregando...</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Filtros de tipo -->
+          <div class="filtros-tipo" role="group" aria-label="Filtrar por tipo">
+            <button class="btn-filtro-tipo ativo" data-tipo="todos">Todos</button>
+            <button class="btn-filtro-tipo"       data-tipo="receita">Receitas</button>
+            <button class="btn-filtro-tipo"       data-tipo="despesa">Despesas</button>
+          </div>
+
+          <!-- Filtro por mês -->
+          <select id="filtroMes" class="select-filtro" aria-label="Filtrar por mês">
+            <option value="todos">Todos os meses</option>
+          </select>
+
+          <!-- Filtro por categoria -->
+          <select id="filtroCategoria" class="select-filtro" aria-label="Filtrar por categoria">
+            <option value="todos">Todas as categorias</option>
+          </select>
+        </div>
+      </header>
+
+      <div class="page-body">
+
+        <!-- ===================== CARDS DE RESUMO ===================== -->
+        <section id="resumo" class="secao-cards" aria-label="Resumo financeiro">
+          <article class="card card-receita">
+            <p class="card-label">Total de Receitas</p>
+            <p class="card-valor positivo" id="cardReceitas">R$ 0,00</p>
+            <p class="card-icone">↑</p>
+          </article>
+
+          <article class="card card-despesa">
+            <p class="card-label">Total de Despesas</p>
+            <p class="card-valor negativo" id="cardDespesas">R$ 0,00</p>
+            <p class="card-icone">↓</p>
+          </article>
+
+          <article class="card card-saldo">
+            <p class="card-label">Saldo do Período</p>
+            <p class="card-valor" id="cardSaldo">R$ 0,00</p>
+            <p class="card-sub" id="cardSaldoUSD">— USD</p>
+          </article>
+        </section>
+
+        <!-- ===================== GRÁFICOS ===================== -->
+        <section id="graficos" class="secao-graficos" aria-label="Gráficos">
+
+          <div class="grafico-card">
+            <h2 class="grafico-titulo">Evolução Mensal</h2>
+            <div class="grafico-wrapper">
+              <canvas id="graficoEvolucao"></canvas>
+            </div>
+          </div>
+
+          <div class="grafico-card">
+            <h2 class="grafico-titulo">Despesas por Categoria</h2>
+            <div class="grafico-wrapper">
+              <canvas id="graficoCategorias"></canvas>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ===================== HISTÓRICO ===================== -->
+        <section id="historico" class="secao-historico" aria-label="Histórico de transações">
+          <div class="secao-header">
+            <h2 class="secao-titulo">Histórico de Transações</h2>
+            <button id="btnResetar" class="btn-resetar" type="button">Resetar dados</button>
+          </div>
+
+          <div class="tabela-wrapper">
+            <table class="tabela-historico" aria-label="Lista de transações">
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Tipo</th>
+                  <th>Mês</th>
+                  <th>Valor</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="historicoBody"></tbody>
+            </table>
+            <p id="historicoVazio" class="historico-vazio" hidden>
+              Nenhuma transação encontrada para os filtros selecionados.
+            </p>
+          </div>
+        </section>
+
+        <!-- ===================== FORMULÁRIO ===================== -->
+        <section id="adicionar" class="secao-form" aria-label="Adicionar transação">
+          <h2 class="secao-titulo">Nova Transação</h2>
+
+          <div class="form-grid">
+
+            <div class="field">
+              <label for="formDescricao" class="field-label">Descrição</label>
+              <input type="text" id="formDescricao" class="field-input" placeholder="Ex: Salário, Aluguel..." maxlength="60" />
+            </div>
+
+            <div class="field">
+              <label for="formValor" class="field-label">Valor</label>
+              <div class="input-group">
+                <span class="input-affix">R$</span>
+                <input type="number" id="formValor" class="field-input" placeholder="0,00" min="0.01" step="0.01" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="formTipo" class="field-label">Tipo</label>
+              <select id="formTipo" class="field-input field-select">
+                <option value="receita">Receita</option>
+                <option value="despesa">Despesa</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="formCategoria" class="field-label">Categoria</label>
+              <select id="formCategoria" class="field-input field-select">
+                <option value="">Selecione...</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="formMes" class="field-label">Mês</label>
+              <input type="month" id="formMes" class="field-input" />
+            </div>
+
+          </div>
+
+          <p id="erroMsg" class="erro-msg" aria-live="polite"></p>
+
+          <button id="btnAdicionar" class="btn-adicionar" type="button">
+            + Adicionar transação
+          </button>
+
+        </section>
+
+      </div>
+    </div>
+
+    <!-- Carrega o módulo JS principal -->
+    <script type="module" src="../JS/main.js"></script>
+  </body>
+</html>
